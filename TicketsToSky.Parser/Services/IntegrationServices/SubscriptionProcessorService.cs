@@ -5,25 +5,27 @@ using TicketsToSky.Parser.Services.InfrastructureServices;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace TicketsToSky.Parser.Services.IntegrationServices;
 
-public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> logger, IHttpClientFactory httpClientFactory, IParserService parserService,
-    ICacheService cacheService,
-    QueueListenerService queueListenerService) : IHostedService, IDisposable
+public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> logger, IHttpClientFactory httpClientFactory, IParserService parserService, ICacheService cacheService, QueueListenerService queueListenerService, IConfiguration configuration) : IHostedService, IDisposable
 {
     private readonly ILogger<SubscriptionProcessorService> _logger = logger;
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("SubscriptionsClient");
     private readonly IParserService _parserService = parserService;
     private readonly ICacheService _cacheService = cacheService;
     private readonly QueueListenerService _queueListenerService = queueListenerService;
+    private readonly IConfiguration _configuration = configuration;
     private Timer? _timer;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("SubscriptionProcessorService starting.");
         await FetchAndCacheSubscriptionsAsync(cancellationToken);
-        _timer = new Timer(async state => await ProcessCachedSubscriptionsAsync(), null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
+        string searchIntervalSecondsString = _configuration["Parser:SearchIntervalSeconds"] ?? throw new ArgumentNullException("Parser:SearchIntervalSeconds");
+        int searchIntervalSeconds = int.Parse(searchIntervalSecondsString);
+        _timer = new Timer(async state => await ProcessCachedSubscriptionsAsync(), null, TimeSpan.Zero, TimeSpan.FromSeconds(searchIntervalSeconds));
     }
 
     private async Task FetchAndCacheSubscriptionsAsync(CancellationToken cancellationToken)
