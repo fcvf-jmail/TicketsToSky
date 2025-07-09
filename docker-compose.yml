@@ -1,0 +1,130 @@
+services:
+  ticketstosky-api:
+    build:
+      context: .
+      dockerfile: TicketsToSky.Api/Dockerfile
+    ports:
+      - "5148:5148"
+    environment:
+      - ASPNETCORE_URLS=http://+:5148
+      - ConnectionStrings__PostgreSQL=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RABBITMQ__UserName=${RABBITMQ_USER_NAME}
+      - RABBITMQ__Password=${RABBITMQ_PASSWORD}
+    volumes:
+      - ./appsettings.json:/config/appsettings.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - ticketstosky-network
+
+  ticketstosky-parser:
+    build:
+      context: .
+      dockerfile: TicketsToSky.Parser/Dockerfile
+    environment:
+      - Redis__ConnectionString=${REDIS_CONNECTION_STRING}
+      - RABBITMQ__UserName=${RABBITMQ_USER_NAME}
+      - RABBITMQ__Password=${RABBITMQ_PASSWORD}
+
+    depends_on:
+      ticketstosky-api:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - ticketstosky-network
+
+  ticketstosky-telegram-sender:
+    build:
+      context: .
+      dockerfile: TicketsToSky.TelegramSender/Dockerfile
+    environment:
+      - Telegram__BotToken=${TELEGRAM_BOT_TOKEN}
+      - RABBITMQ__UserName=${RABBITMQ_USER_NAME}
+      - RABBITMQ__Password=${RABBITMQ_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      ticketstosky-api:
+        condition: service_started
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - ticketstosky-network
+
+  redis:
+    image: redis:7.0
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ticketstosky-network
+
+  rabbitmq:
+    image: rabbitmq:4.1.2-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ticketstosky-network
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ticketstosky-network
+
+networks:
+  ticketstosky-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  rabbitmq-data:
+  postgres-data:
