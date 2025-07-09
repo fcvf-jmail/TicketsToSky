@@ -188,3 +188,187 @@ TicketsToSky состоит из трёх микросервисов и трёх
      docker-compose build --no-cache
      docker-compose up -d
      ```
+
+
+## API Документация
+
+API сервиса `ticketstosky-api` предоставляет эндпоинты для управления подписками на поиск авиабилетов. Все эндпоинты находятся по базовому пути `/api/v1/subscriptions`. API принимает и возвращает данные в формате JSON. Все запросы должны содержать заголовок `Content-Type: application/json`
+
+### Эндпоинты
+
+#### 1. Создание подписки (`POST /api/v1/subscriptions`)
+
+Создаёт новую подписку на поиск авиабилетов по заданным параметрам
+
+**Параметры запроса** (в теле запроса, JSON):
+- `ChatId` (обязательный, `long`): ID чата в Telegram для отправки уведомлений
+- `MaxPrice` (обязательный, `int`): Максимальная цена билета (в рублях)
+- `DepartureAirport` (обязательный, `string`): Код аэропорта вылета (IATA, например, `SVO`)
+- `ArrivalAirport` (обязательный, `string`): Код аэропорта прилёта (IATA, например, `JFK`)
+- `DepartureDate` (обязательный, `DateOnly`): Дата вылета в формате `YYYY-MM-DD`
+- `MaxTransfersCount` (обязательный, `int`): Максимальное количество пересадок
+- `MinBaggageAmount` (обязательный, `int`): Минимальное количество багажа (в кг)
+- `MinHandbagsAmount` (обязательный, `int`): Минимальное количество ручной клади (в кг)
+
+**Пример запроса**:
+```bash
+curl -X POST http://localhost:5148/api/v1/subscriptions \
+-H "Content-Type: application/json" \
+-d '{
+    "ChatId": 123456789,
+    "MaxPrice": 50000,
+    "DepartureAirport": "SVO",
+    "ArrivalAirport": "JFK",
+    "DepartureDate": "2025-12-01",
+    "MaxTransfersCount": 1,
+    "MinBaggageAmount": 20,
+    "MinHandbagsAmount": 5
+}'
+```
+
+**Пример ответа** (успешный, HTTP 200):
+```json
+"3fa85f64-5717-4562-b3fc-2c963f66afa6"
+```
+
+**Ошибки**:
+- `400 Bad Request`: Неверный формат данных или отсутствуют обязательные поля
+- `500 Internal Server Error`: Ошибка сервера (например, проблемы с подключением к базе данных)
+
+#### 2. Обновление подписки (`PUT /api/v1/subscriptions`)
+
+Обновляет существующую подписку по её параметрам. Требуется указать Id подписки
+
+**Параметры запроса** (в теле запроса, JSON):
+- `Id` (обязательный, `Guid`): Уникальный идентификатор подписки
+- `ChatId` (обязательный, `long`): ID чата в Telegram
+- `MaxPrice` (обязательный, `int`): Максимальная цена билета
+- `DepartureAirport` (обязательный, `string`): Код аэропорта вылета
+- `ArrivalAirport` (обязательный, `string`): Код аэропорта прилёта
+- `DepartureDate` (обязательный, `DateOnly`): Дата вылета
+- `MaxTransfersCount` (обязательный, `int`): Максимальное количество пересадок
+- `MinBaggageAmount` (обязательный, `int`): Минимальное количество багажа
+- `MinHandbagsAmount` (обязательный, `int`): Минимальное количество ручной клади
+
+**Пример запроса**:
+```bash
+curl -X PUT http://localhost:5148/api/v1/subscriptions \
+-H "Content-Type: application/json" \
+-d '{
+    "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "ChatId": 123456789,
+    "MaxPrice": 55000,
+    "DepartureAirport": "SVO",
+    "ArrivalAirport": "JFK",
+    "DepartureDate": "2025-12-02",
+    "MaxTransfersCount": 2,
+    "MinBaggageAmount": 23,
+    "MinHandbagsAmount": 7
+}'
+```
+
+**Пример ответа** (успешный, HTTP 200):
+```json
+"3fa85f64-5717-4562-b3fc-2c963f66afa6"
+```
+
+**Ошибки**:
+- `400 Bad Request`: Неверный формат данных, отсутствуют обязательные поля или подписка с указанным `Id` не найдена
+- `500 Internal Server Error`: Ошибка сервера
+
+#### 3. Удаление подписки (`DELETE /api/v1/subscriptions`)
+
+Удаляет подписку по её идентификатору
+
+**Параметры запроса** (в теле запроса, JSON):
+- `Id` (обязательный, `Guid`): Уникальный идентификатор подписки
+
+**Пример запроса**:
+```bash
+curl -X DELETE http://localhost:5148/api/v1/subscriptions \
+-H "Content-Type: application/json" \
+-d '{"Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}'
+```
+
+**Пример ответа** (успешный, HTTP 200):
+Пустой ответ (без тела)
+
+**Ошибки**:
+- `400 Bad Request`: Неверный формат `Id` или подписка не найдена
+- `500 Internal Server Error`: Ошибка сервера
+
+#### 4. Получение всех подписок (`GET /api/v1/subscriptions`)
+
+Возвращает список всех подписок
+
+**Параметры запроса**: Отсутствуют
+
+**Пример запроса**:
+```bash
+curl -X GET http://localhost:5148/api/v1/subscriptions
+```
+
+**Пример ответа** (успешный, HTTP 200):
+```json
+[
+    {
+        "Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "ChatId": 123456789,
+        "MaxPrice": 50000,
+        "DepartureAirport": "SVO",
+        "ArrivalAirport": "JFK",
+        "DepartureDate": "2025-12-01",
+        "MaxTransfersCount": 1,
+        "MinBaggageAmount": 20,
+        "MinHandbagsAmount": 5
+    },
+    {
+        "Id": "4fa85f64-5717-4562-b3fc-2c963f66afa7",
+        "ChatId": 987654321,
+        "MaxPrice": 60000,
+        "DepartureAirport": "DME",
+        "ArrivalAirport": "LAX",
+        "DepartureDate": "2025-12-15",
+        "MaxTransfersCount": 0,
+        "MinBaggageAmount": 30,
+        "MinHandbagsAmount": 10
+    }
+]
+```
+
+**Ошибки**:
+- `500 Internal Server Error`: Ошибка сервера
+
+#### 5. Обновление времени последней проверки (`PATCH /api/v1/subscriptions`)
+
+Обновляет свойство `LastChecked` подписки на текущее время (UTC)
+
+**Параметры запроса** (в теле запроса, JSON):
+- `Id` (обязательный, `Guid`): Уникальный идентификатор подписки
+
+**Пример запроса**:
+```bash
+curl -X PATCH http://localhost:5148/api/v1/subscriptions \
+-H "Content-Type: application/json" \
+-d '{"Id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}'
+```
+
+**Пример ответа** (успешный, HTTP 200):
+```json
+"3fa85f64-5717-4562-b3fc-2c963f66afa6"
+```
+
+**Ошибки**:
+- `400 Bad Request`: Неверный формат `Id` или подписка не найдена
+- `500 Internal Server Error`: Ошибка сервера
+
+### Примечания
+
+- Все даты в формате `YYYY-MM-DD` (ISO 8601)
+- Коды аэропортов должны соответствовать стандарту IATA (3 буквы, например, `SVO`, `JFK`)
+- Для тестирования API рекомендуется использовать инструменты, такие как `curl`, Postman или Swagger
+- Убедитесь, что сервисы `postgres`, `rabbitmq` и `redis` запущены перед отправкой запросов к API
+- В случае ошибок проверяйте логи сервиса `ticketstosky-api`:
+  ```bash
+  docker logs ticketstosky-ticketstosky-api-1
+  ```
