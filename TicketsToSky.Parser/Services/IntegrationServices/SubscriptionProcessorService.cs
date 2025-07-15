@@ -34,7 +34,8 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
         try
         {
             _logger.LogInformation("Fetching subscriptions from API");
-            HttpResponseMessage response = await _requestRetryHandler.ExecuteWithRetryAsync(() => _httpClient.GetAsync("http://localhost:5148/api/v1/subscriptions/", cancellationToken));
+            string apiUrl = _configuration["Parser:ApiUrl"] ?? throw new ArgumentNullException("Parser:ApiUrl", "API URL must be configured");
+            HttpResponseMessage response = await _requestRetryHandler.ExecuteWithRetryAsync(() => _httpClient.GetAsync($"http://{apiUrl}:5148/api/v1/subscriptions/", cancellationToken));
             response.EnsureSuccessStatusCode();
 
             List<SubscriptionEvent>? subscriptions = await response.Content.ReadFromJsonAsync<List<SubscriptionEvent>>(cancellationToken);

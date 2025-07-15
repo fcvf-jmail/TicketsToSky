@@ -16,6 +16,9 @@ RUN dotnet publish "TicketsToSky.Api.csproj" -c Release -o /app/publish /p:UseAp
 
 FROM base AS final
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y curl
+
 COPY --from=publish /app/publish .
 COPY --from=build /src/appsettings.json .
 ENTRYPOINT ["dotnet", "TicketsToSky.Api.dll"]
