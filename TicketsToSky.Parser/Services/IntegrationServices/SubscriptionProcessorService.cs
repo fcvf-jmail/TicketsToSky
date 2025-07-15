@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace TicketsToSky.Parser.Services.IntegrationServices;
 
-public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> logger, IHttpClientFactory httpClientFactory, IParserService parserService, ICacheService cacheService, QueueListenerService queueListenerService, IConfiguration configuration) : IHostedService, IDisposable
+public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> logger, IHttpClientFactory httpClientFactory, IParserService parserService, ICacheService cacheService, QueueListenerService queueListenerService, IConfiguration configuration, IRequestRetryHandler requestRetryHandler) : IHostedService, IDisposable
 {
     private readonly ILogger<SubscriptionProcessorService> _logger = logger;
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("SubscriptionsClient");
@@ -17,6 +17,7 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
     private readonly ICacheService _cacheService = cacheService;
     private readonly QueueListenerService _queueListenerService = queueListenerService;
     private readonly IConfiguration _configuration = configuration;
+    private readonly IRequestRetryHandler _requestRetryHandler = requestRetryHandler;
     private Timer? _timer;
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -33,7 +34,7 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
         try
         {
             _logger.LogInformation("Fetching subscriptions from API");
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:5148/api/v1/subscriptions/", cancellationToken);
+            HttpResponseMessage response = await _requestRetryHandler.ExecuteWithRetryAsync(() => _httpClient.GetAsync("http://localhost:5148/api/v1/subscriptions/", cancellationToken));
             response.EnsureSuccessStatusCode();
 
             List<SubscriptionEvent>? subscriptions = await response.Content.ReadFromJsonAsync<List<SubscriptionEvent>>(cancellationToken);

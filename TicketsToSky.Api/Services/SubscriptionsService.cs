@@ -41,6 +41,14 @@ public class SubscriptionsService(ISubscriptionRepository subscriptionRepository
         await _rabbitMQService.PublishEventAsync(subscriptionEvent, "subscription.deleted");
     }
 
+    public async Task<SubscriptionDto> GetSubscriptionAsync(Guid id)
+    {
+        Subscription subscription = await _subscriptionRepository.GetByIdAsync(id);
+        SubscriptionDto subscriptionDto = _mapper.Map<SubscriptionDto>(subscription);
+
+        return subscriptionDto;
+    }
+
     public async Task<List<SubscriptionDto>> GetSubscriptionsAsync()
     {
         List<Subscription> subscriptions = await _subscriptionRepository.GetSubscriptionsAsync();

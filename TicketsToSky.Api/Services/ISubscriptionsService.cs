@@ -8,5 +8,6 @@ public interface ISubscriptionsService
     Task<Guid> UpdateAsync(SubscriptionDto subscriptionDto);
     Task DeleteAsync(Guid id);
     Task<List<SubscriptionDto>> GetSubscriptionsAsync();
+    Task<SubscriptionDto> GetSubscriptionAsync(Guid id);
     Task<Guid> UpdateLastCheckedAsync(Guid id, DateTime updatedTime);
 }

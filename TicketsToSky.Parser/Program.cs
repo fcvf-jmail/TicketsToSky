@@ -4,9 +4,6 @@ using StackExchange.Redis;
 using TicketsToSky.Parser.Services.IntegrationServices;
 using TicketsToSky.Parser.Services.InfrastructureServices;
 using TicketsToSky.Parser.Services.BusinessServices;
-using TicketsToSky.Parser.Models.SearchModels;
-using System.Text.Json;
-using System.Text;
 
 var builder = Host.CreateDefaultBuilder(args);
 

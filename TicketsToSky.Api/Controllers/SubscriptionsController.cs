@@ -38,6 +38,12 @@ public class SubscriptionsController(ISubscriptionsService subscriptionsService)
         return await _subscriptionsService.GetSubscriptionsAsync();
     }
 
+    [HttpGet("/{id}")]
+    public async Task<SubscriptionDto> GetSubscription(Guid id)
+    {
+        return await _subscriptionsService.GetSubscriptionAsync(id);
+    }
+
     [HttpPatch]
     public async Task<Guid> UpdateLastCheckedProperty(RequestOnlyWithId updateLastCheckedRequest)
     {
