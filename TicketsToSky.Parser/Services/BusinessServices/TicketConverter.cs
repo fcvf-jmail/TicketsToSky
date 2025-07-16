@@ -146,7 +146,7 @@ public class TicketConverter : ITicketConverter
 
         string departureAirport = firstFlight.Departure;
         string arrivalAirport = lastFlight.Arrival;
-        DateTime departureDateTime = DateTimeOffset.FromUnixTimeSeconds(firstFlight.LocalArrivalTimestamp).DateTime;
+        DateTime departureDateTime = DateTimeOffset.FromUnixTimeSeconds(firstFlight.LocalDepartureTimestamp).DateTime;
         DateTime arrivalDateTime = DateTimeOffset.FromUnixTimeSeconds(lastFlight.LocalArrivalTimestamp).DateTime;
 
         return (departureAirport, arrivalAirport, departureDateTime, arrivalDateTime);
