@@ -89,10 +89,10 @@ public class SearchParamsConsumer : IRabbitMQConsumer
     {
         try
         {
-            SubscriptionEvent subscriptionEvent = GetSubscriptionEvent(ea);
-            _logger.LogInformation($"Received event: {subscriptionEvent.Event} for subscription {subscriptionEvent.Id}");
+            SubscriptionEvent? subscriptionEvent = GetSubscriptionEvent(ea);
+            _logger.LogInformation($"Received event: {subscriptionEvent?.Event} for subscription {subscriptionEvent?.Id}");
 
-            switch (subscriptionEvent.Event)
+            switch (subscriptionEvent?.Event)
             {
                 case RabbitMqEventEnum.Created:
                     await ProcessCreatedEventAsync(subscriptionEvent);
@@ -107,7 +107,7 @@ public class SearchParamsConsumer : IRabbitMQConsumer
                     break;
 
                 default:
-                    _logger.LogWarning($"Unknown event type: {subscriptionEvent.Event} for subscription {subscriptionEvent.Id}");
+                    _logger.LogWarning($"Unknown event type: {subscriptionEvent?.Event} for subscription {subscriptionEvent?.Id}");
                     break;
             }
             await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
