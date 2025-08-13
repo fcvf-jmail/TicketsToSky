@@ -43,7 +43,7 @@ services:
       - RABBITMQ__UserName=${RABBITMQ_USERNAME}
       - RABBITMQ__Password=${RABBITMQ_PASSWORD}
       - Parser__ApiUrl=ticketstosky-api
-      - Parser__AwtValue={AWT_VALUE}
+      - Parser__AwtValue=${AWT_VALUE}
     depends_on:
       ticketstosky-api:
         condition: service_healthy
