@@ -32,18 +32,19 @@ TicketsToSky состоит из трёх микросервисов и трёх
    - Читает сообщения из Telegram очереди в RabbitMQ
    - Отправляет уведомления пользователям через Telegram бот
 
-4. **postgres**:
+### Вспомогательные сервисы
+1. **postgres**:
    - Хранит данные о подписках пользователей (параметры поиска)
 
-5. **rabbitmq**:
-   - Обеспечивает асинхронное взаимодействие между сервисами через очереди сообщений (по умолчению `searchParamsExchange`, `telegramExchange`)
+2. **rabbitmq**:
+   - Обеспечивает асинхронное взаимодействие между сервисами через очереди сообщений (по умолчанию `searchParamsExchange`, `telegramExchange`)
 
-6. **redis**:
+3. **redis**:
    - Кэширует информацию о подписках
    - Кэширует результаты поиска
 
 **Схема взаимодействия**:
-- Пользователь отправляет запрос на подписку через `ticketstosky-api`
+- Пользователь отправляет запрос на создание подписки через `ticketstosky-api`
 - API сохраняет подписку в PostgreSQL и отправляет параметры поиска в очередь `searchParamsEvents` (RabbitMQ)
 - `ticketstosky-parser` читает параметры из очереди, кэширует в Redis. Каждые 5 минут выполняет поиск, кэширует результаты и отправляет уведомления в очередь `telegramMessages`
 - `ticketstosky-telegram-sender` получает сообщения из очереди `telegramMessages` и отправляет уведомления через Telegram-бот
@@ -73,7 +74,7 @@ TicketsToSky состоит из трёх микросервисов и трёх
      POSTGRES_DB=ticketstosky_db
 
      # RabbitMQ settings
-     RABBITMQ_USER_NAME=user
+     RABBITMQ_USERNAME=user
      RABBITMQ_PASSWORD=password_456
 
      # Telegram bot settings
@@ -88,9 +89,10 @@ TicketsToSky состоит из трёх микросервисов и трёх
      ```
    - Отредактируйте `.env`, заменив фейковые значения на реальные:
      - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Учетные данные и имя базы данных для PostgreSQL
-     - `RABBITMQ_USER_NAME`, `RABBITMQ_PASSWORD`: Учетные данные для RabbitMQ
+     - `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD`: Учетные данные для RabbitMQ
      - `TELEGRAM_BOT_TOKEN`: токен Telegram бота от @BotFather
      - `REDIS_CONNECTION_STRING`: Строка подключения к Redis (например, `redis:6379` для локального Redis)
+     - `AWT_VALUE`: Токен авторизации от loukoster.com
 
 3. **Проверьте `appsettings.json`** (опционально):
    - В корне проекта находится `appsettings.json` с настройками по умолчанию:
@@ -143,7 +145,7 @@ TicketsToSky состоит из трёх микросервисов и трёх
 
 3. **Проверка RabbitMQ**:
    - Откройте `http://localhost:15672` в браузере
-   - Войдите, используя логин и пароль из `.env` (например, `RABBITMQ_USER_NAME` и `RABBITMQ_PASSWORD`)
+   - Войдите, используя логин и пароль из `.env` (например, `RABBITMQ_USERNAME` и `RABBITMQ_PASSWORD`)
    - Проверьте наличие обменов (`searchParamsExchange`, `telegramExchange`) и очередей (`searchParamsEvents`, `telegramMessages`)
 
 4. **Проверка PostgreSQL**:
@@ -171,7 +173,7 @@ TicketsToSky состоит из трёх микросервисов и трёх
      ```
 
 2. **Ошибка `RabbitMQ:UserName` или `RabbitMQ:Password`**:
-   - Убедитесь, что `RABBITMQ_USER_NAME` и `RABBITMQ_PASSWORD` заданы в `.env`
+   - Убедитесь, что `RABBITMQ_USERNAME` и `RABBITMQ_PASSWORD` заданы в `.env`
    - Проверьте логи `ticketstosky-telegram-sender`:
      ```bash
      docker logs ticketstosky-ticketstosky-telegram-sender-1

@@ -4,8 +4,9 @@ using StackExchange.Redis;
 using TicketsToSky.Parser.Services.IntegrationServices;
 using TicketsToSky.Parser.Services.InfrastructureServices;
 using TicketsToSky.Parser.Services.BusinessServices;
+using System.Net;
 
-var builder = Host.CreateDefaultBuilder(args);
+IHostBuilder builder = Host.CreateDefaultBuilder(args);
 
 builder.ConfigureServices((hostContext, services) =>
 {

@@ -117,82 +117,90 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
 
             foreach (var key in subscriptionKeys)
             {
-                DateTime subStart = DateTime.UtcNow;
-                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(TimeSpan.FromSeconds(120));
-                SubscriptionEvent? subscription = await _cacheService.GetAsync<SubscriptionEvent>(key);
-                if (subscription == null)
-                {
-                    _logger.LogWarning("[{Time}] Subscription not found for key: {Key}", DateTime.UtcNow, key);
-                    continue;
-                }
-
-                _logger.LogInformation("[{Time}] [SUBSCRIPTION] Processing subscription {Id} | Departure: {DepartureAirport} | Arrival: {ArrivalAirport} | Date: {DepartureDate:yyyy-MM-dd}", subStart, subscription.Id, subscription.DepartureAirport, subscription.ArrivalAirport, subscription.DepartureDate);
-
-                var departureLocations = await _parserService.GetAirportCodesAsync(subscription.DepartureAirport);
-                _logger.LogDebug("[{Time}] Departure airport locations: {Locations}", DateTime.UtcNow, departureLocations);
-                if (departureLocations == null || departureLocations.Count == 0)
-                {
-                    _logger.LogWarning("[{Time}] Departure airport not found: {DepartureAirport}", DateTime.UtcNow, subscription.DepartureAirport);
-                    continue;
-                }
-                string departureCode = departureLocations.First().Code;
-                _logger.LogInformation("[{Time}] Departure airport code resolved: {Code}", DateTime.UtcNow, departureCode);
-
-                List<Location>? arrivalLocations = await _parserService.GetAirportCodesAsync(subscription.ArrivalAirport);
-                _logger.LogDebug("[{Time}] Arrival airport locations: {Locations}", DateTime.UtcNow, arrivalLocations);
-                if (arrivalLocations == null || arrivalLocations.Count == 0)
-                {
-                    _logger.LogWarning("[{Time}] Arrival airport not found: {ArrivalAirport}", DateTime.UtcNow, subscription.ArrivalAirport);
-                    continue;
-                }
-                string arrivalCode = arrivalLocations.First().Code;
-                _logger.LogInformation("[{Time}] Arrival airport code resolved: {Code}", DateTime.UtcNow, arrivalCode);
-
-                Guid searchId = await _parserService.GetSearchIdAsync(departureCode, subscription.DepartureDate, arrivalCode, 1);
-                _logger.LogInformation("[{Time}] SearchId received: {SearchId}", DateTime.UtcNow, searchId);
-
-                List<FlightTicket> flightTickets = await _parserService.GetTicketsAsync(searchId);
-                _logger.LogInformation("[{Time}] Tickets received: {Count}", DateTime.UtcNow, flightTickets.Count);
-
-                List<FlightTicket> filteredTickets = flightTickets
-                    .Where(ticket => ticket.Price <= subscription.MaxPrice &&
-                        ticket.StopsCount <= subscription.MaxTransfersCount &&
-                        ticket.BaggageAmount >= subscription.MinBaggageAmount &&
-                        ticket.HandbagsAmount >= subscription.MinHandbagsAmount)
-                    .ToList();
-                _logger.LogInformation("[{Time}] Tickets after filtering: {Count} (MaxPrice: {MaxPrice}, MaxTransfers: {MaxTransfersCount}, MinBaggage: {MinBaggageAmount}, MinHandbags: {MinHandbagsAmount})", DateTime.UtcNow, filteredTickets.Count, subscription.MaxPrice, subscription.MaxTransfersCount, subscription.MinBaggageAmount, subscription.MinHandbagsAmount);
-
-                string patchUrl = $"http://{_apiUrl}:5148/api/v1/subscriptions/";
-                string json = JsonSerializer.Serialize(new { Id = subscription.Id });
-                StringContent content = new(json, Encoding.UTF8, "application/json");
                 try
                 {
-                    var patchResponse = await _requestRetryHandler.ExecuteWithRetryAsync(() => _httpClient.PatchAsync(patchUrl, content));
-                    if (patchResponse.IsSuccessStatusCode) _logger.LogInformation("[{Time}] PATCH {PatchUrl} succeeded for subscription {Id}", DateTime.UtcNow, patchUrl, subscription.Id);
-                    else _logger.LogWarning("[{Time}] PATCH {PatchUrl} failed for subscription {Id} | Status: {StatusCode}", DateTime.UtcNow, patchUrl, subscription.Id, patchResponse.StatusCode);
-                }
-                catch (Exception patchEx)
-                {
-                    _logger.LogError(patchEx, "[{Time}] PATCH {PatchUrl} error for subscription {Id}", DateTime.UtcNow, patchUrl, subscription.Id);
-                }
-
-                if (filteredTickets.Count == 0)
-                {
-                    _logger.LogInformation("[{Time}] No suitable tickets found for subscription {Id}", DateTime.UtcNow, subscription.Id);
-                }
-                else
-                {
-                    foreach (FlightTicket flightTicket in filteredTickets)
+                    DateTime subStart = DateTime.UtcNow;
+                    using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    cts.CancelAfter(TimeSpan.FromSeconds(120));
+                    SubscriptionEvent? subscription = await _cacheService.GetAsync<SubscriptionEvent>(key);
+                    if (subscription == null)
                     {
-                        await _queueListenerService.PublishFlightTicketAsync(flightTicket, subscription.ChatId);
-                        _logger.LogDebug("[{Time}] Published ticket {TicketId} to queue for subscription {Id}", DateTime.UtcNow, flightTicket.Url, subscription.Id);
+                        _logger.LogWarning("[{Time}] Subscription not found for key: {Key}", DateTime.UtcNow, key);
+                        continue;
                     }
-                    _logger.LogInformation("[{Time}] Published {Count} tickets to queue for subscription {Id}", DateTime.UtcNow, filteredTickets.Count, subscription.Id);
-                }
 
-                DateTime subEnd = DateTime.UtcNow;
-                _logger.LogInformation("[{Time}] [END SUBSCRIPTION] Finished processing subscription {Id}. Duration: {Duration} сек.", subEnd, subscription.Id, (subEnd - subStart).TotalSeconds);
+                    _logger.LogInformation("[{Time}] [SUBSCRIPTION] Processing subscription {Id} | Departure: {DepartureAirport} | Arrival: {ArrivalAirport} | Date: {DepartureDate:yyyy-MM-dd}", subStart, subscription.Id, subscription.DepartureAirport, subscription.ArrivalAirport, subscription.DepartureDate);
+
+                    List<Location>? departureLocations = await _parserService.GetAirportCodesAsync(subscription.DepartureAirport);
+                    _logger.LogDebug("[{Time}] Departure airport locations: {Locations}", DateTime.UtcNow, departureLocations);
+                    if (departureLocations == null || departureLocations.Count == 0)
+                    {
+                        _logger.LogWarning("[{Time}] Departure airport not found: {DepartureAirport}", DateTime.UtcNow, subscription.DepartureAirport);
+                        continue;
+                    }
+                    string departureCode = departureLocations.First().Code;
+                    _logger.LogInformation("[{Time}] Departure airport code resolved: {Code}", DateTime.UtcNow, departureCode);
+
+                    List<Location>? arrivalLocations = await _parserService.GetAirportCodesAsync(subscription.ArrivalAirport);
+                    _logger.LogDebug("[{Time}] Arrival airport locations: {Locations}", DateTime.UtcNow, arrivalLocations);
+                    if (arrivalLocations == null || arrivalLocations.Count == 0)
+                    {
+                        _logger.LogWarning("[{Time}] Arrival airport not found: {ArrivalAirport}", DateTime.UtcNow, subscription.ArrivalAirport);
+                        continue;
+                    }
+                    string arrivalCode = arrivalLocations.First().Code;
+                    _logger.LogInformation("[{Time}] Arrival airport code resolved: {Code}", DateTime.UtcNow, arrivalCode);
+
+                    Guid searchId = await _parserService.GetSearchIdAsync(departureCode, subscription.DepartureDate, arrivalCode, 1);
+                    _logger.LogInformation("[{Time}] SearchId received: {SearchId}", DateTime.UtcNow, searchId);
+
+                    List<FlightTicket> flightTickets = await _parserService.GetTicketsAsync(searchId);
+                    _logger.LogInformation("[{Time}] Tickets received: {Count}", DateTime.UtcNow, flightTickets.Count);
+
+                    List<FlightTicket> filteredTickets = flightTickets
+                        .Where(ticket => ticket.Price <= subscription.MaxPrice &&
+                            ticket.StopsCount <= subscription.MaxTransfersCount &&
+                            ticket.BaggageAmount >= subscription.MinBaggageAmount &&
+                            ticket.HandbagsAmount >= subscription.MinHandbagsAmount)
+                        .ToList();
+                    _logger.LogInformation("[{Time}] Tickets after filtering: {Count} (MaxPrice: {MaxPrice}, MaxTransfers: {MaxTransfersCount}, MinBaggage: {MinBaggageAmount}, MinHandbags: {MinHandbagsAmount})", DateTime.UtcNow, filteredTickets.Count, subscription.MaxPrice, subscription.MaxTransfersCount, subscription.MinBaggageAmount, subscription.MinHandbagsAmount);
+
+                    string patchUrl = $"http://{_apiUrl}:5148/api/v1/subscriptions/";
+                    string json = JsonSerializer.Serialize(new { Id = subscription.Id });
+                    StringContent content = new(json, Encoding.UTF8, "application/json");
+                    try
+                    {
+                        var patchResponse = await _requestRetryHandler.ExecuteWithRetryAsync(() => _httpClient.PatchAsync(patchUrl, content));
+                        if (patchResponse.IsSuccessStatusCode) _logger.LogInformation("[{Time}] PATCH {PatchUrl} succeeded for subscription {Id}", DateTime.UtcNow, patchUrl, subscription.Id);
+                        else _logger.LogWarning("[{Time}] PATCH {PatchUrl} failed for subscription {Id} | Status: {StatusCode}", DateTime.UtcNow, patchUrl, subscription.Id, patchResponse.StatusCode);
+                    }
+                    catch (Exception patchEx)
+                    {
+                        _logger.LogError(patchEx, "[{Time}] PATCH {PatchUrl} error for subscription {Id}", DateTime.UtcNow, patchUrl, subscription.Id);
+                    }
+
+                    if (filteredTickets.Count == 0)
+                    {
+                        _logger.LogInformation("[{Time}] No suitable tickets found for subscription {Id}", DateTime.UtcNow, subscription.Id);
+                    }
+                    else
+                    {
+                        foreach (FlightTicket flightTicket in filteredTickets)
+                        {
+                            await _queueListenerService.PublishFlightTicketAsync(flightTicket, subscription.ChatId);
+                            _logger.LogDebug("[{Time}] Published ticket {TicketId} to queue for subscription {Id}", DateTime.UtcNow, flightTicket.Url, subscription.Id);
+                        }
+                        _logger.LogInformation("[{Time}] Published {Count} tickets to queue for subscription {Id}", DateTime.UtcNow, filteredTickets.Count, subscription.Id);
+                    }
+
+                    DateTime subEnd = DateTime.UtcNow;
+                    _logger.LogInformation("[{Time}] [END SUBSCRIPTION] Finished processing subscription {Id}. Duration: {Duration} сек.", subEnd, subscription.Id, (subEnd - subStart).TotalSeconds);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[{Time}] Error processing subscription {SubscriptionId}", DateTime.UtcNow, key.Replace("Subscription:", ""));
+                    continue;
+                }
             }
             DateTime processEnd = DateTime.UtcNow;
             _logger.LogInformation("[{Time}] [END] Finished processing all cached subscriptions. Duration: {Duration} сек.", processEnd, (processEnd - processStart).TotalSeconds);
