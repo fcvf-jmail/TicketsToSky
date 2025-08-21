@@ -12,7 +12,6 @@ public class ApiClient(HttpClient httpClient, IRequestRetryHandler retryHandler,
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly IRequestRetryHandler _retryHandler = retryHandler;
-    private readonly IConfiguration _configuration = configuration;
     private readonly string _cookieValue = $"_awt={configuration["Parser:AwtValue"]}";
     private HttpRequestMessage CreateRequest(HttpMethod method, string url, HttpContent? content = null)
     {

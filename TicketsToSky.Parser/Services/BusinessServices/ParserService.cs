@@ -4,33 +4,21 @@ using TicketsToSky.Parser.Services.IntegrationServices;
 
 namespace TicketsToSky.Parser.Services.BusinessServices;
 
-public class ParserService(IApiClient apiClient, IJsonParser jsonParser, ITicketConverter ticketConverter) : IParserService
+public class ParserService(IPlaywrightService playwrightService, IJsonParser jsonParser, ITicketConverter ticketConverter) : IParserService
 {
-    private readonly IApiClient _apiClient = apiClient;
+    private readonly IPlaywrightService _playwrightService = playwrightService;
     private readonly IJsonParser _jsonParser = jsonParser;
     private readonly ITicketConverter _ticketConverter = ticketConverter;
 
-    public async Task<List<Location>?> GetAirportCodesAsync(string airportOrCityName)
-    {
-        return await _apiClient.GetAirportCodesAsync(airportOrCityName);
-    }
-
-    public async Task<Guid> GetSearchIdAsync(string departureCode, DateOnly departureDate, string destinationCode, int amountOfAdults, int amountOfChildren = 0, int amountOfInfants = 0)
-    {
-        return await _apiClient.GetSearchIdAsync(departureCode, departureDate, destinationCode, amountOfAdults, amountOfChildren, amountOfInfants);
-    }
-
-    public async Task<List<FlightTicket>> GetTicketsAsync(Guid searchId)
+    public async Task<List<FlightTicket>> GetTicketsAsync(string departureCode, DateOnly departureDate, string destinationCode, int amountOfAdults, int amountOfChildren = 0, int amountOfInfants = 0)
     {
         List<FlightTicket> allFlightTickets = [];
-        bool isFullAnswer = false;
+        (List<string> responseBodies, Guid searchId) = await _playwrightService.GetSearchResultsAsync(departureCode, departureDate, destinationCode, amountOfAdults, amountOfChildren, amountOfInfants);
 
-        while (!isFullAnswer)
+        foreach (string responseBody in responseBodies)
         {
-            string result = await _apiClient.GetSearchResultsAsync(searchId);
-            isFullAnswer = _jsonParser.IsFullAnswer(result);
-            IAsyncEnumerable<Proposal?> proposals = _jsonParser.ParseFlightsAsync(result);
-            List<Airport> airports = await _jsonParser.ParseAirportsAsync(result);
+            IAsyncEnumerable<Proposal?> proposals = _jsonParser.ParseFlightsAsync(responseBody);
+            List<Airport> airports = await _jsonParser.ParseAirportsAsync(responseBody);
 
             List<FlightTicket> flightTickets = await _ticketConverter.ConvertProposalsToFlightTickets(proposals.ToBlockingEnumerable(), airports, searchId);
             allFlightTickets.AddRange(flightTickets);

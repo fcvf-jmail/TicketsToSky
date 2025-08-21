@@ -131,30 +131,7 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
 
                     _logger.LogInformation("[{Time}] [SUBSCRIPTION] Processing subscription {Id} | Departure: {DepartureAirport} | Arrival: {ArrivalAirport} | Date: {DepartureDate:yyyy-MM-dd}", subStart, subscription.Id, subscription.DepartureAirport, subscription.ArrivalAirport, subscription.DepartureDate);
 
-                    List<Location>? departureLocations = await _parserService.GetAirportCodesAsync(subscription.DepartureAirport);
-                    _logger.LogDebug("[{Time}] Departure airport locations: {Locations}", DateTime.UtcNow, departureLocations);
-                    if (departureLocations == null || departureLocations.Count == 0)
-                    {
-                        _logger.LogWarning("[{Time}] Departure airport not found: {DepartureAirport}", DateTime.UtcNow, subscription.DepartureAirport);
-                        continue;
-                    }
-                    string departureCode = departureLocations.First().Code;
-                    _logger.LogInformation("[{Time}] Departure airport code resolved: {Code}", DateTime.UtcNow, departureCode);
-
-                    List<Location>? arrivalLocations = await _parserService.GetAirportCodesAsync(subscription.ArrivalAirport);
-                    _logger.LogDebug("[{Time}] Arrival airport locations: {Locations}", DateTime.UtcNow, arrivalLocations);
-                    if (arrivalLocations == null || arrivalLocations.Count == 0)
-                    {
-                        _logger.LogWarning("[{Time}] Arrival airport not found: {ArrivalAirport}", DateTime.UtcNow, subscription.ArrivalAirport);
-                        continue;
-                    }
-                    string arrivalCode = arrivalLocations.First().Code;
-                    _logger.LogInformation("[{Time}] Arrival airport code resolved: {Code}", DateTime.UtcNow, arrivalCode);
-
-                    Guid searchId = await _parserService.GetSearchIdAsync(departureCode, subscription.DepartureDate, arrivalCode, 1);
-                    _logger.LogInformation("[{Time}] SearchId received: {SearchId}", DateTime.UtcNow, searchId);
-
-                    List<FlightTicket> flightTickets = await _parserService.GetTicketsAsync(searchId);
+                    List<FlightTicket> flightTickets = await _parserService.GetTicketsAsync(subscription.DepartureAirport, subscription.DepartureDate, subscription.ArrivalAirport, 1, 0, 0);
                     _logger.LogInformation("[{Time}] Tickets received: {Count}", DateTime.UtcNow, flightTickets.Count);
 
                     List<FlightTicket> filteredTickets = flightTickets
@@ -187,7 +164,7 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
                     {
                         foreach (FlightTicket flightTicket in filteredTickets)
                         {
-                            await _queueListenerService.PublishFlightTicketAsync(flightTicket, subscription.ChatId);
+                            // await _queueListenerService.PublishFlightTicketAsync(flightTicket, subscription.ChatId);
                             _logger.LogDebug("[{Time}] Published ticket {TicketId} to queue for subscription {Id}", DateTime.UtcNow, flightTicket.Url, subscription.Id);
                         }
                         _logger.LogInformation("[{Time}] Published {Count} tickets to queue for subscription {Id}", DateTime.UtcNow, filteredTickets.Count, subscription.Id);

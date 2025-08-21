@@ -38,12 +38,14 @@ services:
       context: .
       dockerfile: TicketsToSky.Parser/Dockerfile
       pull: false
+    volumes:
+      - playwright-cache:/root/.cache/ms-playwright
     environment:
       - Redis__ConnectionString=${REDIS_CONNECTION_STRING}
       - RABBITMQ__UserName=${RABBITMQ_USERNAME}
       - RABBITMQ__Password=${RABBITMQ_PASSWORD}
       - Parser__ApiUrl=ticketstosky-api
-      - Parser__AwtValue=${AWT_VALUE}
+      - PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright/ms-playwright/
     depends_on:
       ticketstosky-api:
         condition: service_healthy
@@ -55,6 +57,8 @@ services:
       restart_policy:
         condition: on-failure
         delay: 5s
+    ipc: host
+    init: true
     networks:
       - ticketstosky-network
 
@@ -138,3 +142,4 @@ volumes:
   redis-data:
   rabbitmq-data:
   postgres-data:
+  playwright-cache:

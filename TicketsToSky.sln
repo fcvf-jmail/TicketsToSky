@@ -10,7 +10,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketsToSky.TelegramSender", "TicketsToSky.TelegramSender\TicketsToSky.TelegramSender.csproj", "{9E9FE0A4-B1E8-4972-9824-8959AA7221FE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketsToSky.TelegramBot", "TicketsToSky.TelegramBot\TicketsToSky.TelegramBot.csproj", "{BF808A1F-FD38-4067-BCD1-F5CBEA57ADD4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +68,18 @@ Global
 		{BF808A1F-FD38-4067-BCD1-F5CBEA57ADD4}.Release|x64.Build.0 = Release|Any CPU
 		{BF808A1F-FD38-4067-BCD1-F5CBEA57ADD4}.Release|x86.ActiveCfg = Release|Any CPU
 		{BF808A1F-FD38-4067-BCD1-F5CBEA57ADD4}.Release|x86.Build.0 = Release|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Debug|x64.Build.0 = Debug|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Debug|x86.Build.0 = Debug|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Release|x64.ActiveCfg = Release|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Release|x64.Build.0 = Release|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Release|x86.ActiveCfg = Release|Any CPU
+		{EEEEEC55-7327-4066-862B-0398CF60BD13}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
