@@ -37,5 +37,5 @@ builder.ConfigureServices((hostContext, services) =>
     services.AddHostedService<SubscriptionProcessorService>();
 });
 
-var host = builder.Build();
+IHost host = builder.Build();
 await host.RunAsync();

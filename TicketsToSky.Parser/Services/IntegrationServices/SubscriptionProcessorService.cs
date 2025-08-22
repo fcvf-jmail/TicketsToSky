@@ -108,12 +108,13 @@ public class SubscriptionProcessorService(ILogger<SubscriptionProcessorService> 
             _logger.LogInformation("[{Time}] [START] Processing cached subscriptions.", processStart);
 
             IEnumerable<string> subscriptionKeys = await _cacheService.GetKeysAsync("Subscription:*");
-            _logger.LogDebug("[{Time}] Found {Count} subscription keys in cache.", DateTime.UtcNow, subscriptionKeys?.Count() ?? 0);
             if (subscriptionKeys == null || !subscriptionKeys.Any())
             {
-                _logger.LogWarning("[{Time}] No subscriptions found in cache.", DateTime.UtcNow);
-                return;
+                _logger.LogWarning("[{Time}] No subscriptions found in cache. Starting FetchAndCacheSubscriptionsAsync", DateTime.UtcNow);
+                await FetchAndCacheSubscriptionsAsync(cancellationToken);
             }
+
+            _logger.LogDebug("[{Time}] Found {Count} subscription keys in cache", DateTime.UtcNow, subscriptionKeys?.Count() ?? 0);
 
             foreach (var key in subscriptionKeys)
             {

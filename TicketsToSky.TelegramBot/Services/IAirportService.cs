@@ -1,11 +1,8 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using TicketsToSky.TelegramBot.Models;
 
-namespace TicketsToSky.TelegramBot.Services
+namespace TicketsToSky.TelegramBot.Services;
+
+public interface IAirportService
 {
-    public interface IAirportService
-    {
-        Task<List<Airport>> SearchAirportsAsync(string term);
-    }
+    Task<List<Airport>> SearchAirportsAsync(string term);
 }

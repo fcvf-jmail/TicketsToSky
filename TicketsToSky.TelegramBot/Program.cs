@@ -1,37 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TicketsToSky.TelegramBot;
 using TicketsToSky.TelegramBot.Services;
 
-namespace TicketsToSky.TelegramBot
-{
-    public class Program
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((context, services) =>
     {
-        public static void Main(string[] args)
-        {
-            var host = CreateHostBuilder(args).Build();
+        services.AddHttpClient<IAirportService, AirportService>();
+        services.AddHttpClient<ISubscriptionService, SubscriptionService>();
+        services.AddSingleton<IUserStateService, UserStateService>();
+        services.AddSingleton<IBotService, BotService>();
+        services.AddHostedService<BotWorker>();
+    })
+    .Build();
 
-            using (var scope = host.Services.CreateScope())
-            {
-                // var db = scope.ServiceProvider.GetRequiredService<Data.UserStateDbContext>();
-                // db.Database.EnsureCreated();
-            }
-            host.Run();
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    var config = hostContext.Configuration;
-                    services.AddHostedService<BotService>();
-                    services.AddSingleton<ITelegramBotService, TelegramBotService>();
-                    services.AddSingleton<IAirportService, AirportService>();
-                    services.AddSingleton<ISubscriptionService, SubscriptionService>();
-                    services.AddScoped<UserStateStorageService>();
-                    services.AddScoped<SubscriptionStorageService>();
-                    services.AddHttpClient();
-                    services.AddUserStateDb(config);
-                });
-    }
-}
+await host.RunAsync();
